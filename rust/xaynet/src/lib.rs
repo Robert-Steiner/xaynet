@@ -65,7 +65,8 @@
 //!
 //! The programming language in which this framework is written should
 //! therefore give us strong support for the following:
-//!
+//! 
+//! 
 //! - **Runs "everywhere"**: the language should not require its own
 //!   runtime and code should compile on a wide range of devices.
 //! - **Memory and concurrency safety**: code that compiles should be both
