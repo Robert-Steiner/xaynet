@@ -25,4 +25,4 @@ participant = xaynet_sdk.run_participant(
 try:
     participant.join()
 except KeyboardInterrupt:
-    print(participant.stop())  # prints the serialized coordinator state
+    print(participant.stop())  # prints the serialized participant state
