@@ -8,7 +8,8 @@ from justbackoff import Backoff
 
 from . import xaynet_sdk
 
-xaynet_sdk.enable_logging()
+xaynet_sdk.init_logging()
+xaynet_sdk.init_crypto()
 
 TrainingResult = TypeVar("TrainingResult")
 TrainingInput = TypeVar("TrainingInput")
@@ -33,8 +34,6 @@ class InternalParticipant(threading.Thread):
         self.participant = participant
         self.exit_event = threading.Event()
         self.poll_period = Backoff(min_ms=100, max_ms=10000, factor=1.2, jitter=False)
-
-        xaynet_sdk.init_crypto()
         self.xaynet_participant = xaynet_sdk.Participant(coordinator_url)
 
         super(InternalParticipant, self).__init__(daemon=True)

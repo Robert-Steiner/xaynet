@@ -1,3 +1,4 @@
+use pyo3::types::PyList;
 use pyo3::{exceptions, prelude::*, wrap_pyfunction};
 use xaynet_core::mask::{FromPrimitives, Model};
 
@@ -6,12 +7,13 @@ use tracing_subscriber::{EnvFilter, FmtSubscriber};
 #[pymodule]
 fn xaynet_sdk(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Participant>()?;
-    m.add_function(wrap_pyfunction!(enable_logging, m)?)?;
+    m.add_function(wrap_pyfunction!(init_logging, m)?)?;
     m.add_function(wrap_pyfunction!(init_crypto, m)?)?;
     Ok(())
 }
 
 #[pyclass]
+#[text_signature = "(url, /)"]
 struct Participant {
     inner: Option<xaynet_mobile::Participant>,
 }
@@ -30,6 +32,7 @@ impl Participant {
         Self { inner: Some(inner) }
     }
 
+    #[text_signature = "($self)"]
     fn tick(&mut self) -> PyResult<()> {
         if let Some(ref mut inner) = self.inner {
             inner.tick();
@@ -37,15 +40,21 @@ impl Participant {
         Ok(())
     }
 
-    fn set_model(&mut self, model: Vec<f32>) -> PyResult<()> {
+    #[text_signature = "($self, model)"]
+    fn set_model(&mut self, model: &PyList) -> PyResult<()> {
         if let Some(ref mut inner) = self.inner {
+            //
+            let model: Vec<f32> = model.extract()?;
             inner.set_model(Model::from_primitives(model.into_iter()).unwrap());
+            Ok(())
+        } else {
+            Err(exceptions::PyTypeError::new_err("No participant"))
         }
-        Ok(())
     }
 
     /// Check whether the participant internal state machine made progress while
     /// executing the PET protocol. If so, the participant state likely changed.
+    #[text_signature = "($self)"]
     pub fn made_progress(&self) -> PyResult<bool> {
         if let Some(ref inner) = self.inner {
             return Ok(inner.made_progress());
@@ -56,6 +65,7 @@ impl Participant {
     /// Check whether the participant internal state machine is waiting for the
     /// participant to load its model into the store. If this method returns `true`, the
     /// caller should make sure to call [`Participant::set_model()`] at some point.
+    #[text_signature = "($self)"]
     pub fn should_set_model(&self) -> PyResult<bool> {
         if let Some(ref inner) = self.inner {
             return Ok(inner.should_set_model());
@@ -71,6 +81,7 @@ impl Participant {
     //     Err(exceptions::PyTypeError::new_err("No participant"))
     // }
 
+    #[text_signature = "($self)"]
     fn save(&mut self) -> PyResult<Vec<u8>> {
         if let Some(inner) = self.inner.take() {
             return Ok(inner.save());
@@ -80,7 +91,7 @@ impl Participant {
 }
 
 #[pyfunction]
-fn enable_logging() {
+fn init_logging() {
     let env_filter = EnvFilter::try_from_env("XAYNET_CLIENT");
     if env_filter.is_ok() {
         let _fmt_subscriber = FmtSubscriber::builder()
