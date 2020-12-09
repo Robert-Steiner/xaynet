@@ -28,6 +28,10 @@ class ParticipantABC(ABC):
     def deserialize_training_input(self, data: list) -> TrainingInput:
         raise NotImplementedError()
 
+    @abstractmethod
+    def on_new_global_model(self, data: list) -> None:
+        raise NotImplementedError()
+
 
 class InternalParticipant(threading.Thread):
     def __init__(self, participant: ParticipantABC, coordinator_url: str):
@@ -35,6 +39,7 @@ class InternalParticipant(threading.Thread):
         self.exit_event = threading.Event()
         self.poll_period = Backoff(min_ms=100, max_ms=10000, factor=1.2, jitter=False)
         self.xaynet_participant = xaynet_sdk.Participant(coordinator_url)
+        self.global_model = None
 
         super(InternalParticipant, self).__init__(daemon=True)
 
@@ -45,16 +50,22 @@ class InternalParticipant(threading.Thread):
             print(err)
             self.exit_event.set()
 
+    def _fetch_global_model() {
+        global_model = self.xaynet_participant.global_model()
+        self.global_model = self.participant.deserialize_training_input(global_model)
+        self.participant.on_new_global_model(self.global_model)
+    }
+
     def train(self):
-        # FIXME download global model
-        training_input = self.participant.deserialize_training_input([])
-        result = self.participant.train(training_input)
+        result = self.participant.train(self.global_model)
         data = self.participant.serialize_training_result(result)
         self.xaynet_participant.set_model(data)
 
     def _run(self):
         while not self.exit_event.is_set():
             self.xaynet_participant.tick()
+            if self.xaynet_participant.new_global_model():
+                self._fetch_global_model()
             if self.xaynet_participant.should_set_model():
                 self.train()
             if self.xaynet_participant.made_progress():

@@ -17,6 +17,10 @@ class Participant(xaynet_sdk.ParticipantABC):
     def serialize_training_result(self, _result: list) -> list:
         return self.model
 
+    def on_new_global_model(self, data: list) -> None:
+        with open('global_model.bin', 'w') as filehandle:
+            filehandle.write(data)
+
 
 participant = xaynet_sdk.run_participant(
     Participant([1, 2, 3.45, 3]), "http://127.0.0.1:8081"
