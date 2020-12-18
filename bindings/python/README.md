@@ -7,7 +7,6 @@
 ## build the client
 
 ```
-cd rust/xaynet-desktop
 python setup.py install
 ```
 

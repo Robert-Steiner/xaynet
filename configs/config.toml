@@ -24,7 +24,7 @@ bound_type = "B0"
 model_type = "M3"
 
 [model]
-length = 4
+length = 55117
 
 [metrics.influxdb]
 url = "http://localhost:8086"

@@ -18,9 +18,9 @@ msrv = "1.48.0"
 [dependencies]
 xaynet-core = { path = "../../rust/xaynet-core", version = "0.1.0" }
 xaynet-mobile = { path = "../../rust/xaynet-mobile", version = "0.1.0"}
-tracing = "0.1.21"
+tracing = "0.1.22"
 sodiumoxide = "0.2.6"
-tracing-subscriber = "0.2.12"
+tracing-subscriber = "0.2.15"
 pyo3 = {version = "0.12.4", features = ["extension-module"]}
 
 [lib]
