@@ -43,7 +43,6 @@ class Participant(  # pylint: disable=too-few-public-methods,too-many-instance-a
         """Initialize a custom participant."""
         super(Participant, self).__init__()
         self.load_random_dataset(dataset_dir)
-        print(len(self.trainset_x.columns))
         self.regressor = Regressor(len(self.trainset_x.columns))
         self.performance_metrics: List[Tuple[float, float]] = []
 
@@ -67,7 +66,9 @@ class Participant(  # pylint: disable=too-few-public-methods,too-many-instance-a
         self.testset_x: pd.DataFrame = testset_x.drop(testset_x.columns[0], axis=1)
         self.testset_y = testset["Y"]
 
-    def train(self, training_input: Optional[np.ndarray]) -> Tuple[np.ndarray, int]:
+    def train_round(
+        self, training_input: Optional[np.ndarray]
+    ) -> Tuple[np.ndarray, int]:
         """Train a model in a federated learning round.
 
         A model is given in terms of its weights and the model is
@@ -114,18 +115,14 @@ class Participant(  # pylint: disable=too-few-public-methods,too-many-instance-a
     ) -> bytes:
         return training_result.tolist()
 
-    def on_new_global_model(self, data: list) -> None:
-        data.tofile("global_model.bin")
+    def on_stop(self) -> None:
+        table = tabulate(self.performance_metrics, headers=["Loss", "R²"])
+        print(table)
 
 
 def main() -> None:
     """Entry point to start a participant."""
     parser = argparse.ArgumentParser(description="Prepare data for regression")
-    parser.add_argument(
-        "--write-performance-metrics",
-        type=str,
-        help="Path to a file where the participant will write performance metrics",
-    )
     parser.add_argument(
         "--data-directory",
         type=str,
@@ -141,9 +138,9 @@ def main() -> None:
 
     # pylint: disable=invalid-name
     logging.basicConfig(
-        format="%(asctime)s.%(msecs)03d %(levelname)-8s %(message)s",
+        format="%(asctime)s.%(msecs)03d %(levelname)8s %(message)s",
         level=logging.DEBUG,
-        datefmt="%Y-%m-%d %H:%M:%S",
+        datefmt="%b %d %H:%M:%S",
     )
 
     participant = run_participant(
@@ -154,13 +151,6 @@ def main() -> None:
         participant.join()
     except KeyboardInterrupt:
         participant.stop()
-
-    # table = tabulate(participant.performance_metrics, headers=["Loss", "R²"])
-    # if args.write_performance_metrics:
-    #     with open(args.write_performance_metrics, "w") as f:
-    #         f.write(table)
-    # else:
-    #     print(table)
 
 
 if __name__ == "__main__":

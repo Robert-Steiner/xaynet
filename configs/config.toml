@@ -14,7 +14,7 @@ min_sum_time = 5
 min_update_time = 10
 max_sum_time = 3600
 max_update_time = 3600
-sum = 0.5
+sum = 0.4
 update = 0.9
 
 [mask]

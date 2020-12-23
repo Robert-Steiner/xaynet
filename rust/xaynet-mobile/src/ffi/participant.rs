@@ -438,7 +438,7 @@ pub unsafe extern "C" fn xaynet_ffi_participant_global_model(
 
 #[macro_export]
 macro_rules! into_primitives {
-    ($global_model:expr, $buffer:expr, $data_type:ty, $len:expr) => {
+    ($global_model:expr, $buffer:expr, $data_type:ty, $len:expr) => {{
         if let Ok(global_model) = $global_model
             .into_primitives()
             .collect::<Result<Vec<$data_type>, _>>()
@@ -449,7 +449,7 @@ macro_rules! into_primitives {
         } else {
             ERR_GLOBALMODEL_CONVERT
         }
-    };
+    }};
 }
 
 /// Return the local model configuration of the model that is expected in the

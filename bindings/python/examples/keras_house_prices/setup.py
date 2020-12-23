@@ -1,6 +1,4 @@
 # pylint: disable=invalid-name
-import sys
-
 from setuptools import find_packages, setup
 
 setup(
@@ -21,15 +19,6 @@ setup(
         "numpy~=1.15",
         "tabulate~=0.8",
     ],
-    extras_require={
-        "dev": [
-            "black",
-            "mypy",
-            "pylint",
-            "isort",
-            "pip-licenses",
-        ]
-    },
     entry_points={
         "console_scripts": [
             "run-participant=keras_house_prices.participant:main",

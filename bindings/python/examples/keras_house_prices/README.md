@@ -2,7 +2,7 @@
 
 1. Adjust the coordinator settings
 
-Change the model size to `55117` in `configs/docker-dev.toml`.
+Change the model length to `55117` in `configs/docker-dev.toml`.
 
 ```toml
 [model]

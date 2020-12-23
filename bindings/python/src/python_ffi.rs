@@ -1,29 +1,56 @@
-use crate::from_primitives;
-use crate::into_primitives;
 use pyo3::create_exception;
 use pyo3::exceptions::PyException;
 use pyo3::types::PyList;
 use pyo3::{prelude::*, wrap_pyfunction};
-use xaynet_core::mask::IntoPrimitives;
-use xaynet_core::mask::{DataType, FromPrimitives, Model};
-
 use tracing::debug;
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
-#[pymodule]
-fn xaynet_sdk(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<Participant>()?;
-    m.add_function(wrap_pyfunction!(init_logging, m)?)?;
-    m.add_function(wrap_pyfunction!(init_crypto, m)?)?;
-    Ok(())
-}
+use xaynet_core::mask::IntoPrimitives;
+use xaynet_core::mask::{DataType, FromPrimitives, Model};
+
+use crate::from_primitives;
+use crate::into_primitives;
 
 create_exception!(xaynet_sdk, CryptoInit, PyException);
+create_exception!(xaynet_sdk, ParticipantInit, PyException);
+create_exception!(xaynet_sdk, ParticipantRestore, PyException);
 create_exception!(xaynet_sdk, UninitializedParticipant, PyException);
 create_exception!(xaynet_sdk, LocalModelLengthMisMatch, PyException);
 create_exception!(xaynet_sdk, LocalModelDataTypeMisMatch, PyException);
 create_exception!(xaynet_sdk, GlobalModelUnavailable, PyException);
 create_exception!(xaynet_sdk, GlobalModelDataTypeMisMatch, PyException);
+
+#[pymodule]
+fn xaynet_sdk(py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<Participant>()?;
+    m.add_function(wrap_pyfunction!(init_logging, m)?)?;
+
+    m.add("CryptoInit", py.get_type::<CryptoInit>())?;
+    m.add("ParticipantInit", py.get_type::<ParticipantInit>())?;
+    m.add("ParticipantRestore", py.get_type::<ParticipantRestore>())?;
+    m.add(
+        "UninitializedParticipant",
+        py.get_type::<UninitializedParticipant>(),
+    )?;
+    m.add(
+        "LocalModelLengthMisMatch",
+        py.get_type::<LocalModelLengthMisMatch>(),
+    )?;
+    m.add(
+        "LocalModelDataTypeMisMatch",
+        py.get_type::<LocalModelDataTypeMisMatch>(),
+    )?;
+    m.add(
+        "GlobalModelUnavailable",
+        py.get_type::<GlobalModelUnavailable>(),
+    )?;
+    m.add(
+        "GlobalModelDataTypeMisMatch",
+        py.get_type::<GlobalModelDataTypeMisMatch>(),
+    )?;
+
+    Ok(())
+}
 
 #[pyclass]
 #[text_signature = "(url, scalar, /)"]
@@ -34,15 +61,28 @@ struct Participant {
 #[pymethods]
 impl Participant {
     #[new]
-    pub fn new(url: String, scalar: f64) -> Self {
-        let mut settings = xaynet_mobile::Settings::new();
+    pub fn new(url: String, scalar: f64, state: Option<Vec<u8>>) -> PyResult<Self> {
+        sodiumoxide::init()
+            .map_err(|_| CryptoInit::new_err("failed to initialize crypto library"))?;
 
-        settings.set_keys(xaynet_core::crypto::SigningKeyPair::generate());
-        settings.set_url(url);
-        settings.set_scalar(scalar);
+        let inner = if let Some(state) = state {
+            debug!("restore participant");
+            xaynet_mobile::Participant::restore(&state, &url).map_err(|err| {
+                ParticipantRestore::new_err(format!("failed to restore participant: {}", err))
+            })?
+        } else {
+            debug!("initialize participant");
+            let mut settings = xaynet_mobile::Settings::new();
+            settings.set_keys(xaynet_core::crypto::SigningKeyPair::generate());
+            settings.set_url(url);
+            settings.set_scalar(scalar);
 
-        let inner = xaynet_mobile::Participant::new(settings).unwrap();
-        Self { inner: Some(inner) }
+            xaynet_mobile::Participant::new(settings).map_err(|err| {
+                ParticipantInit::new_err(format!("failed to initialize participant: {}", err))
+            })?
+        };
+
+        Ok(Self { inner: Some(inner) })
     }
 
     #[text_signature = "($self)"]
@@ -51,7 +91,7 @@ impl Participant {
             Some(ref mut inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "participant is uninitialized",
+                    "called 'tick' on an uninitialized participant",
                 ))
             }
         };
@@ -66,7 +106,7 @@ impl Participant {
             Some(ref mut inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "participant is uninitialized",
+                    "called 'set_model' on an uninitialized participant",
                 ))
             }
         };
@@ -102,7 +142,7 @@ impl Participant {
             Some(ref inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "participant is uninitialized",
+                    "called 'made_progress' on an uninitialized participant",
                 ))
             }
         };
@@ -119,7 +159,7 @@ impl Participant {
             Some(ref inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "participant is uninitialized",
+                    "called 'should_set_model' on an uninitialized participant",
                 ))
             }
         };
@@ -128,12 +168,34 @@ impl Participant {
     }
 
     #[text_signature = "($self)"]
+    pub fn task(&self) -> PyResult<u8> {
+        let inner = match self.inner {
+            Some(ref inner) => inner,
+            None => {
+                return Err(UninitializedParticipant::new_err(
+                    "called 'task' on an uninitialized participant",
+                ))
+            }
+        };
+
+        // FIXME:
+        // Returning an enum is currently not supported: https://github.com/PyO3/pyo3/pull/1045
+        let task_as_u8 = match inner.task() {
+            xaynet_mobile::Task::None => 0,
+            xaynet_mobile::Task::Sum => 1,
+            xaynet_mobile::Task::Update => 2,
+        };
+
+        Ok(task_as_u8)
+    }
+
+    #[text_signature = "($self)"]
     pub fn new_global_model(&self) -> PyResult<bool> {
         let inner = match self.inner {
             Some(ref inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "participant is uninitialized",
+                    "called 'new_global_model' on an uninitialized participant",
                 ))
             }
         };
@@ -147,7 +209,7 @@ impl Participant {
             Some(ref mut inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "participant is uninitialized",
+                    "called 'global_model' on an uninitialized participant",
                 ))
             }
         };
@@ -175,7 +237,7 @@ impl Participant {
             Some(inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "participant is uninitialized",
+                    "called 'save' on an uninitialized participant",
                 ))
             }
         };
@@ -226,9 +288,4 @@ fn init_logging() {
             .with_ansi(true)
             .try_init();
     }
-}
-
-#[pyfunction]
-fn init_crypto() -> PyResult<()> {
-    sodiumoxide::init().map_err(|_| CryptoInit::new_err("failed to initialize crypto library"))
 }
