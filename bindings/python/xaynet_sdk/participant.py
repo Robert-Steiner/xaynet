@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 import logging
 import threading
-from typing import TypeVar
+from typing import List, Optional, TypeVar
 
 from justbackoff import Backoff
 
-from . import xaynet_sdk
+from xaynet_sdk import xaynet_sdk
 
 # rust participant logging
 xaynet_sdk.init_logging()
@@ -18,7 +18,7 @@ TrainingInput = TypeVar("TrainingInput")
 
 class ParticipantABC(ABC):
     @abstractmethod
-    def train_round(self, training_input: TrainingInput) -> TrainingResult:
+    def train_round(self, training_input: Optional[TrainingInput]) -> TrainingResult:
         raise NotImplementedError()
 
     @abstractmethod
@@ -26,7 +26,7 @@ class ParticipantABC(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def deserialize_training_input(self, data: list) -> TrainingInput:
+    def deserialize_training_input(self, global_model: list) -> TrainingInput:
         raise NotImplementedError()
 
     # FIXME: make it possible in the participant state machine to skip a task
@@ -36,7 +36,7 @@ class ParticipantABC(ABC):
     def participate_in_update_task(self) -> bool:
         return True
 
-    def on_new_global_model(self, data: list) -> None:
+    def on_new_global_model(self, global_model: TrainingInput) -> None:
         pass
 
     def on_stop(self) -> None:
@@ -75,7 +75,7 @@ class InternalParticipant(threading.Thread):
 
         self._tick_lock = threading.Lock()
 
-        super(InternalParticipant, self).__init__(daemon=True)
+        super().__init__(daemon=True)
 
     def run(self):
         self._participant = self._participant(*self._p_args, *self._p_kwargs)
@@ -131,7 +131,19 @@ class InternalParticipant(threading.Thread):
         else:
             self._exit_event.wait(timeout=self._poll_period.duration())
 
-    def stop(self) -> list:
+    def stop(self) -> List[int]:
+        """
+        Stops the execution of the participant and returns its serialized state.
+        The serialized state can be passed to the `spawn_participant` function
+        to restore a participant.
+
+        Note:
+            The serialized state contains unencrypted **private key(s)**. If used
+            in production, it is important that the serialized state is securely saved.
+
+        Returns:
+            The serialized state of the participant.
+        """
         LOG.debug("stopping participant")
         self._exit_event.set()
         with self._tick_lock:

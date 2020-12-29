@@ -13,11 +13,12 @@ def main() -> None:
         datefmt="%b %d %H:%M:%S",
     )
 
-    (participant, global_model_notifier) = xaynet_sdk.run_participant_async("http://127.0.0.1:8081")
+    (participant, global_model_notifier) = xaynet_sdk.spawn_async_participant(
+        "http://127.0.0.1:8081"
+    )
 
     try:
-        while 1:
-            global_model_notifier.wait()
+        while global_model_notifier.wait():
             LOG.info("a new global model")
             global_model = participant.get_global_model()
             with open("global_model.bin", "w") as filehandle:

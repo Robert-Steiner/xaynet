@@ -2,11 +2,15 @@
 
 1. Adjust the coordinator settings
 
-Change the model length to `55117` in `configs/docker-dev.toml`.
+Change the model length to `55117` and the `bound_type` to `B2`
+in [`docker-dev.toml`](../../../../configs/docker-dev.toml).
 
 ```toml
 [model]
 length = 55117
+
+[mask]
+bound_type = "B2"
 ```
 
 2. Start the coordinator
@@ -17,7 +21,7 @@ docker-compose -f docker/docker-compose.yml up --build
 ```
 
 **All the commands in this section are run from the
-`bindings/python/example/keras_house_prices` directory.**
+`bindings/python/examples/keras_house_prices` directory.**
 
 3. Install the SDK and the example:
 

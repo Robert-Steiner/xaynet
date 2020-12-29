@@ -91,7 +91,7 @@ impl Participant {
             Some(ref mut inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "called 'tick' on an uninitialized participant",
+                    "called 'tick' on an uninitialized participant. this is a bug.",
                 ))
             }
         };
@@ -106,7 +106,7 @@ impl Participant {
             Some(ref mut inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "called 'set_model' on an uninitialized participant",
+                    "called 'set_model' on an uninitialized participant. this is a bug.",
                 ))
             }
         };
@@ -142,7 +142,7 @@ impl Participant {
             Some(ref inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "called 'made_progress' on an uninitialized participant",
+                    "called 'made_progress' on an uninitialized participant. this is a bug.",
                 ))
             }
         };
@@ -159,7 +159,7 @@ impl Participant {
             Some(ref inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "called 'should_set_model' on an uninitialized participant",
+                    "called 'should_set_model' on an uninitialized participant. this is a bug.",
                 ))
             }
         };
@@ -173,7 +173,7 @@ impl Participant {
             Some(ref inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "called 'task' on an uninitialized participant",
+                    "called 'task' on an uninitialized participant. this is a bug.",
                 ))
             }
         };
@@ -195,7 +195,7 @@ impl Participant {
             Some(ref inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "called 'new_global_model' on an uninitialized participant",
+                    "called 'new_global_model' on an uninitialized participant. this is a bug.",
                 ))
             }
         };
@@ -209,7 +209,7 @@ impl Participant {
             Some(ref mut inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "called 'global_model' on an uninitialized participant",
+                    "called 'global_model' on an uninitialized participant. this is a bug.",
                 ))
             }
         };
@@ -237,7 +237,7 @@ impl Participant {
             Some(inner) => inner,
             None => {
                 return Err(UninitializedParticipant::new_err(
-                    "called 'save' on an uninitialized participant",
+                    "called 'save' on an uninitialized participant. this is a bug.",
                 ))
             }
         };

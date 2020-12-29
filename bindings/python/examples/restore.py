@@ -20,7 +20,7 @@ def main() -> None:
         LOG.info("no saved state availabe. initialize new participant")
         restored_state = None
 
-    (participant, _) = xaynet_sdk.run_participant_async(
+    (participant, _) = xaynet_sdk.spawn_async_participant(
         "http://127.0.0.1:8081", restored_state
     )
 

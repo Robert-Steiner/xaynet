@@ -1,14 +1,18 @@
 # Examples
 
-Some examples that show how the `Participant` or `AsyncParticipant` can be used.
+Some examples that show how the `ParticipantABC` or `AsyncParticipant` can be used.
 
 ## Getting Started
 
-- [`hello_world.py`](./hello_world.py) A basic `Participant` example
+All examples in this section work without changing the coordinator
+[config.toml](../../../configs/config.toml) or [docker-dev.toml](../../../configs/docker-dev.toml).
+
+- [`hello_world.py`](./hello_world.py) A basic `ParticipantABC` example
 - [`hello_world_async.py`](./hello_world_async.py) A basic `AsyncParticipant` example
-- [`download_global_model.py`](./download_global_model.py) A `Participant` that only downloads the latest global model
+- [`download_global_model.py`](./download_global_model.py) A `ParticipantABC` that only downloads the latest global model
 - [`download_global_model_async.py`](./download_global_model_async.py) A `AsyncParticipant` that only downloads the latest global model
-- [`multiple_participants.py`](./download_global_model_async.py) Spawn multiple `Participant`s in a single process
+- [`multiple_participants.py`](./download_global_model_async.py) Spawn multiple `ParticipantABC`s in a single process
+- [`participate_in_update.py`](./participate_in_update.py) Only train a model when there is enough battery left
 - [`restore.py`](./restore.py) Save and restore the state of a `AsyncParticipant`
 
 ## Keras House Prices

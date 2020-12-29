@@ -10,7 +10,7 @@ LOG = logging.getLogger(__name__)
 class Participant(xaynet_sdk.ParticipantABC):
     def __init__(self, model: list) -> None:
         self.model = model
-        super(Participant, self).__init__()
+        super().__init__()
 
     def deserialize_training_input(self, data: list) -> list:
         return data
@@ -39,7 +39,7 @@ def main() -> None:
         datefmt="%b %d %H:%M:%S",
     )
 
-    participant = xaynet_sdk.run_participant(
+    participant = xaynet_sdk.spawn_participant(
         "http://127.0.0.1:8081", Participant, args=([1, 2, 3.45, 3],)
     )
 

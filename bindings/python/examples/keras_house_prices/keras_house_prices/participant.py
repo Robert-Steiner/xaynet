@@ -1,8 +1,6 @@
 """Tensorflow Keras regression test case"""
 
 import argparse
-from io import BytesIO
-import json
 import logging
 import os
 import random
@@ -13,7 +11,7 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
-from xaynet_sdk import ParticipantABC, run_participant
+from xaynet_sdk import ParticipantABC, spawn_participant
 
 LOG = logging.getLogger(__name__)
 
@@ -41,7 +39,7 @@ class Participant(  # pylint: disable=too-few-public-methods,too-many-instance-a
 
     def __init__(self, dataset_dir: str) -> None:
         """Initialize a custom participant."""
-        super(Participant, self).__init__()
+        super().__init__()
         self.load_random_dataset(dataset_dir)
         self.regressor = Regressor(len(self.trainset_x.columns))
         self.performance_metrics: List[Tuple[float, float]] = []
@@ -66,9 +64,7 @@ class Participant(  # pylint: disable=too-few-public-methods,too-many-instance-a
         self.testset_x: pd.DataFrame = testset_x.drop(testset_x.columns[0], axis=1)
         self.testset_y = testset["Y"]
 
-    def train_round(
-        self, training_input: Optional[np.ndarray]
-    ) -> Tuple[np.ndarray, int]:
+    def train_round(self, training_input: Optional[np.ndarray]) -> np.ndarray:
         """Train a model in a federated learning round.
 
         A model is given in terms of its weights and the model is
@@ -110,9 +106,7 @@ class Participant(  # pylint: disable=too-few-public-methods,too-many-instance-a
     def deserialize_training_input(self, data: list) -> Optional[np.ndarray]:
         return np.array(data)
 
-    def serialize_training_result(
-        self, training_result: Tuple[np.ndarray, int]
-    ) -> bytes:
+    def serialize_training_result(self, training_result: np.ndarray) -> bytes:
         return training_result.tolist()
 
     def on_stop(self) -> None:
@@ -143,7 +137,7 @@ def main() -> None:
         datefmt="%b %d %H:%M:%S",
     )
 
-    participant = run_participant(
+    participant = spawn_participant(
         args.coordinator_url, Participant, args=(args.data_directory,)
     )
 

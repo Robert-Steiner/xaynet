@@ -17,7 +17,7 @@ class RegressionData(DataHandler):
     def __init__(
         self, data_directory: str, homogeneity: str, n_participants: int
     ) -> None:
-        super(RegressionData, self).__init__(
+        super().__init__(
             data_directory, homogeneity=homogeneity, n_participants=n_participants
         )
 
