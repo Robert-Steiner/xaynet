@@ -46,6 +46,8 @@ The `ParticipantABC` API is similar to the old one which we introduced in
 The only difference is that the new participant now runs in it's own thread and provides additional
 helpful methods.
 
+![ParticipantABC](../../assets/python_participant.svg)
+
 **Public API of `ParticipantABC`  and `InternalParticipant`**
 
 ```python
@@ -218,6 +220,8 @@ and to run the PET protocol. Therefore, we offer a second API in which the train
 of the model is no longer part of the participant. This results in a simpler and more flexible API,
 but it comes with the tradeoff that the user needs to perform the de / serialization of the
 global / local on their side.
+
+![AsyncParticipant](../../assets/python_async_participant.svg)
 
 **Public API of `AsyncParticipant`**
 
