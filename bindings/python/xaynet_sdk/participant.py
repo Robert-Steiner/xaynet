@@ -114,14 +114,20 @@ class InternalParticipant(threading.Thread):
             self._xaynet_participant.tick()
 
             if self._xaynet_participant.new_global_model():
-                self._fetch_global_model()
-                self._participant.on_new_global_model(self._global_model)
-
-            if (
-                self._xaynet_participant.should_set_model()
-                and self._participant.participate_in_update_task()
-            ):
-                self._train()
+                try:
+                    self._fetch_global_model()
+                except (
+                    xaynet_sdk.GlobalModelUnavailable,
+                    xaynet_sdk.GlobalModelDataTypeMisMatch,
+                ) as err:
+                    LOG.warning("failed to get global model: %s", err)
+                else:
+                    self._participant.on_new_global_model(self._global_model)
+                    if (
+                        self._xaynet_participant.should_set_model()
+                        and self._participant.participate_in_update_task()
+                    ):
+                        self._train()
 
             made_progress = self._xaynet_participant.made_progress()
 

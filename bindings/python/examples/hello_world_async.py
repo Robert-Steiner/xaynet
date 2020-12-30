@@ -28,7 +28,7 @@ def main() -> None:
             LOG.info("a new global model")
             participant.get_global_model()
             training()
-            participant.set_local_model([1.2, 12.3, 4, 2])
+            participant.set_local_model([0.1, 0.2, 0.345, 0.3])
 
     except KeyboardInterrupt:
         participant.stop()

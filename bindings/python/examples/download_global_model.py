@@ -37,7 +37,7 @@ def main() -> None:
     )
 
     participant = xaynet_sdk.spawn_participant(
-        "http://127.0.0.1:8081", Participant, args=([1, 2, 3.45, 3],)
+        "http://127.0.0.1:8081", Participant, args=([0.1, 0.2, 0.345, 0.3],)
     )
 
     try:
