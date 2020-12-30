@@ -17,4 +17,4 @@ All examples in this section work without changing the coordinator
 
 ## Keras House Prices
 
-- [`README.md`](./keras_house_prices/README.md) A full machine learning example
+- [`README.md`](./keras_house_prices/) A full machine learning example
