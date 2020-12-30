@@ -192,26 +192,26 @@ use cases:
 
 1. The user wants to use the global / local model in a different thread.
 
-It is possible to provide methods for this on the `InternalParticipant` but they are not
-straight forward to implement. To make them thread-safe, it is probably necessary to use
-synchronization primitives but this would make the `InternalParticipant` more complicated.
-In addition, questions arise such as: Would the user want to be able to get
-the current local model at any time or would they like to be notified as soon as a new
-local model is available.
+    It is possible to provide methods for this on the `InternalParticipant` but they are not
+    straight forward to implement. To make them thread-safe, it is probably necessary to use
+    synchronization primitives but this would make the `InternalParticipant` more complicated.
+    In addition, questions arise such as: Would the user want to be able to get
+    the current local model at any time or would they like to be notified as soon as a new
+    local model is available.
 
-1. Train a model without the participant
+2. Train a model without the participant
 
-Since the training of the model is embedded in the `ParticipantABC`, this will probably lead to
-code duplication if the user wants to perform the training without the participant. Furthermore,
-the embedding of the training in the `ParticipantABC` can also be a problem once the participant
-is integrated into an existing application, considering the code for the training has to be
-moved into the `train_round` method, which can lead to significant changes to the existing code.
+    Since the training of the model is embedded in the `ParticipantABC`, this will probably lead to
+    code duplication if the user wants to perform the training without the participant. Furthermore,
+    the embedding of the training in the `ParticipantABC` can also be a problem once the participant
+    is integrated into an existing application, considering the code for the training has to be
+    moved into the `train_round` method, which can lead to significant changes to the existing code.
 
 3. Custom exception handling
 
-Last but not least, the question arises how we can inform the user that an exception has been
-thrown. We do not want the participant to be terminated with every exception but we want to
-give the user the opportunity to respond appropriately.
+    Last but not least, the question arises how we can inform the user that an exception has been
+    thrown. We do not want the participant to be terminated with every exception but we want to
+    give the user the opportunity to respond appropriately.
 
 The main issue we saw is that the participant is responsible for training the model
 and to run the pet protocol. Therefore, we offer a second API in which the training
