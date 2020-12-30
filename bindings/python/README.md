@@ -26,18 +26,22 @@ python setup.py install
 
 ## Participant API(s)
 
-The Python SDK that consists of two experimental Xaynet participants 
-`ParticipantABC` and `AsyncParticipant`.
+The Python SDK that consists of two experimental Xaynet participants `ParticipantABC`
+and `AsyncParticipant`.
+
+The word `Async` does not refer to `asyncio` it refers more to the federated learning process.
+In `ParticipantABC` the model is only trained if the participant was selected an update participant
+while in `AsyncParticipant` the model can be trained and set at any time.
 
 **Nice to know:**
 
 The Python participants do not implement a Xaynet participant from scratch. Under the hood
-they use [`xaynet-mobile`](../../rust/xaynet-mobile/README.md) via
+they use [`xaynet-mobile`](../../rust/xaynet-mobile/) via
 [`pyo3`](https://github.com/PyO3/pyo3).
 
 ### `ParticipantABC`
 
-The `Participant` API is similar to the old one which we introduced in
+The `ParticipantABC` API is similar to the old one which we introduced in
 [`v0.8.0`](https://github.com/xaynetwork/xaynet/blob/v0.8.0/python/sdk/xain_sdk/participant.py#L24).
 The only difference is that the new participant now runs in it's own thread and provides additional
 helpful methods.
@@ -45,10 +49,54 @@ helpful methods.
 **Public API of `ParticipantABC`  and `InternalParticipant`**
 
 ```python
+def spawn_participant(
+    coordinator_url: str,
+    participant,
+    args: Tuple = (),
+    kwargs: dict = {},
+    state: Optional[List[int]] = None,
+    scalar: float = 1.0,
+):
+    """
+    Spawns a `InternalParticipant` in a separate thread and returns a participant handle.
+    If a `state` is passed, this state is restored, otherwise a new `InternalParticipant` 
+    is created.
 
+    Args:
+        coordinator_url: The url of the coordinator.
+        participant: A class that implements `ParticipantABC`.
+        args: The args that get passed to the constructor of the `participant` class.
+        kwargs: The kwargs that get passed to the constructor of the `participant` class.
+        state: A serialized participant state. Defaults to `None`.
+        scalar: The scalar used for masking. Defaults to `1.0`.
+
+    Returns:
+        The `InternalParticipant`.
+
+    Raises:
+        CryptoInit: If the initialization of the underling crypto library has failed.
+        ParticipantInit: If the participant cannot be initialized. This is most
+            likely caused by an invalid `coordinator_url`.
+        ParticipantRestore: If the participant cannot be restored due to invalid
+            serialized state. This exception can never be thrown if the `state` is `None`.
+        Exception: Any exception that can be thrown during the instantiation of `participant`.
+    """
 
 class ParticipantABC(ABC):
     def train_round(self, training_input: Optional[TrainingInput]) -> TrainingResult:
+        """
+        Trains a model. `training_input` is hte deserialized global model
+        (see `deserialize_training_input`). If no global model exists
+        (usually in the first round), `training_input` will be `None`.
+        In this case the weights of the model should be initialized and returned.
+
+        Args:
+            self: The participant.
+            training_input: The deserialized global model (weights of the global model) or None.
+
+        Returns:
+            The updated model weights (the local model).
+        """
 
     def serialize_training_result(self, training_result: TrainingResult) -> list:
         """
@@ -56,6 +104,7 @@ class ParticipantABC(ABC):
         elements must match the data type defined in the coordinator configuration.
 
         Args:
+            self: The participant.
             training_result: The `TrainingResult` of `train_round`.
 
         Returns:
@@ -64,18 +113,18 @@ class ParticipantABC(ABC):
 
     def deserialize_training_input(self, global_model: list) -> TrainingInput:
         """
-        Deserializes the global_model from a `list` to the type of `TrainingInput`.
+        Deserializes the `global_model` from a `list` to the type of `TrainingInput`.
         The data type of the elements matches the data type defined in the coordinator
         configuration. If no global model exists (usually in the first round), the method will
         not be called by the `InternalParticipant`.
 
         Args:
+            self: The participant.
             global_model: The global model.
 
         Returns:
             The `TrainingInput` for `train_round`.
         """
-
 
     def participate_in_update_task(self) -> bool:
         """
@@ -84,11 +133,40 @@ class ParticipantABC(ABC):
         if the participant is selected as a update participant. If `participate_in_update_task`
         returns the `False`, `train_round` will not be called by the `InternalParticipant`.
 
+        If the method is not overridden, it returns `True` by default.
+
         Returns:
             Whether the `train_round` method should be called when the participant
             is an update participant.
         """
 
+    def on_new_global_model(self, global_model: TrainingInput) -> None:
+        """
+        A callback that is called by the `InternalParticipant` once a new global model is
+        available. If no global model exists (usually in the first round), `global_model` will
+        be `None`. If a global model exists, `global_model` is already the deserialized
+        global model. (See `deserialize_training_input`)
+
+        If the method is not overridden, it does nothing by default.
+
+        Args:
+            self: The participant.
+            global_model: The deserialized global model or `None`.
+        """
+
+    def on_stop(self) -> None:
+        """
+        A callback that is called by the `InternalParticipant` before the `InternalParticipant`
+        thread is stopped.
+
+        This callback can be used, for example, to show performance values ​​that have been
+        collected in the participant over the course of the training rounds.
+
+        If the method is not overridden, it does nothing by default.
+
+        Args:
+            self: The participant.
+        """
 
 class InternalParticipant:
     def stop(self) -> List[int]:
@@ -108,12 +186,38 @@ class InternalParticipant:
 
 ### `AsyncParticipant`
 
-However, we have noticed that our `ParticipantABC` API may be difficult to integrate with existing
-applications. Since the code for training the model has to be moved into the `train_round` method,
-it can lead to significant changes in the existing codebase.
+We noticed that the API of `ParticipantABC` / `InternalParticipant` reduces a fair amount of
+code on the user side, however, it may not be flexible enough to cover some of the following
+use cases:
 
-Therefore, we offer a second API in which the training of the model is no longer part of
-the participant.
+1. The user wants to use the global / local model in a different thread.
+
+It is possible to provide methods for this on the `InternalParticipant` but they are not
+straight forward to implement. To make them thread-safe, it is probably necessary to use
+synchronization primitives but this would make the `InternalParticipant` more complicated.
+In addition, questions arise such as: Would the user want to be able to get
+the current local model at any time or would they like to be notified as soon as a new
+local model is available.
+
+1. Train a model without the participant
+
+Since the training of the model is embedded in the `ParticipantABC`, this will probably lead to
+code duplication if the user wants to perform the training without the participant. Furthermore,
+the embedding of the training in the `ParticipantABC` can also be a problem once the participant
+is integrated into an existing application, considering the code for the training has to be
+moved into the `train_round` method, which can lead to significant changes to the existing code.
+
+3. Custom exception handling
+
+Last but not least, the question arises how we can inform the user that an exception has been
+thrown. We do not want the participant to be terminated with every exception but we want to
+give the user the opportunity to respond appropriately.
+
+The main issue we saw is that the participant is responsible for training the model
+and to run the pet protocol. Therefore, we offer a second API in which the training
+of the model is no longer part of the participant. This results in a simpler and more flexible API,
+but it comes with the tradeoff that the user needs to perform the de / serialization of the
+global / local on their side.
 
 **Public API of `AsyncParticipant`**
 
@@ -122,8 +226,14 @@ def spawn_async_participant(coordinator_url: str, state: Optional[List[int]]=Non
     -> (AsyncParticipant, threading.Event):
     """
     Spawns a `AsyncParticipant` in a separate thread and returns a participant handle
-    together with a global model notifier. If a `state` is passed, this state is restored, otherwise a
-    new participant is created.
+    together with a global model notifier. If a `state` is passed, this state is restored,
+    otherwise a new participant is created.
+
+    The global model notifier sets the flag once a new global model is available.
+    The flag is also set when the global model is `None` (usually in the first round).
+    The flag is reset once the method `get_global_model` has been called but it is also possible
+    to reset the flag manually by calling
+    [`clear()`](https://docs.python.org/3/library/threading.html#threading.Event.clear).
 
     Args:
         coordinator_url: The url of the coordinator.
@@ -138,7 +248,7 @@ def spawn_async_participant(coordinator_url: str, state: Optional[List[int]]=Non
         ParticipantInit: If the participant cannot be initialized. This is most
             likely caused by an invalid `coordinator_url`.
         ParticipantRestore: If the participant cannot be restored due to invalid
-            serialized state. This exception can never be thrown if the`state` is `None`.
+            serialized state. This exception can never be thrown if the `state` is `None`.
     """
 
 class AsyncParticipant:
@@ -148,8 +258,8 @@ class AsyncParticipant:
         model exists (usually in the first round), the method returns `None`.
 
         Returns:
-            The current global model in the form of a list or `None`. The data type of the
-            elements matches the data type defined in the coordinator configuration.
+            The current global model or `None`. The data type of the elements matches the data
+            type defined in the coordinator configuration.
 
         Raises:
             GlobalModelUnavailable: If the participant cannot connect to the coordinator to get
@@ -171,8 +281,8 @@ class AsyncParticipant:
         the participant waits until a local model is set or until a new round has been started.
 
         Args:
-            local_model: The local model in the form of a list. The data type of the
-                elements must match the data type defined in the coordinator configuration.
+            local_model: The local model. The data type of the elements must match the data
+            type defined in the coordinator configuration.
 
         Raises:
             LocalModelLengthMisMatch: If the length of the local model does not match the
@@ -193,6 +303,7 @@ class AsyncParticipant:
 
         Returns:
             The serialized state of the participant.
+        """
 ```
 
 ## Enable logging of `xaynet-mobile`

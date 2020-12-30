@@ -19,14 +19,51 @@ TrainingInput = TypeVar("TrainingInput")
 class ParticipantABC(ABC):
     @abstractmethod
     def train_round(self, training_input: Optional[TrainingInput]) -> TrainingResult:
+        """
+        Trains a model. `training_input` is hte deserialized global model
+        (see `deserialize_training_input`). If no global model exists
+        (usually in the first round), `training_input` will be `None`.
+        In this case the weights of the model should be initialized and returned.
+
+        Args:
+            self: The participant.
+            training_input: The deserialized global model (weights of the global model) or None.
+
+        Returns:
+            The updated model weights (the local model).
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def serialize_training_result(self, training_result: TrainingResult) -> list:
+        """
+        Serializes the `training_result` into a `list`. The data type of the
+        elements must match the data type defined in the coordinator configuration.
+
+        Args:
+            self: The participant.
+            training_result: The `TrainingResult` of `train_round`.
+
+        Returns:
+            The `training_result` as a `list`.
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def deserialize_training_input(self, global_model: list) -> TrainingInput:
+        """
+        Deserializes the `global_model` from a `list` to the type of `TrainingInput`.
+        The data type of the elements matches the data type defined in the coordinator
+        configuration. If no global model exists (usually in the first round), the method will
+        not be called by the `InternalParticipant`.
+
+        Args:
+            self: The participant.
+            global_model: The global model.
+
+        Returns:
+            The `TrainingInput` for `train_round`.
+        """
         raise NotImplementedError()
 
     # FIXME: make it possible in the participant state machine to skip a task
@@ -34,13 +71,47 @@ class ParticipantABC(ABC):
     #     True
 
     def participate_in_update_task(self) -> bool:
+        """
+        A callback used by the `InternalParticipant` to determine whether the
+        `train_round` method should be called. This callback is only called
+        if the participant is selected as a update participant. If `participate_in_update_task`
+        returns the `False`, `train_round` will not be called by the `InternalParticipant`.
+
+        If the method is not overridden, it returns `True` by default.
+
+        Returns:
+            Whether the `train_round` method should be called when the participant
+            is an update participant.
+        """
         return True
 
     def on_new_global_model(self, global_model: TrainingInput) -> None:
-        pass
+        """
+        A callback that is called by the `InternalParticipant` once a new global model is
+        available. If no global model exists (usually in the first round), `global_model` will
+        be `None`. If a global model exists, `global_model` is already the deserialized
+        global model. (See `deserialize_training_input`)
+
+        If the method is not overridden, it does nothing by default.
+
+        Args:
+            self: The participant.
+            global_model: The deserialized global model or `None`.
+        """
 
     def on_stop(self) -> None:
-        pass
+        """
+        A callback that is called by the `InternalParticipant` before the `InternalParticipant`
+        thread is stopped.
+
+        This callback can be used, for example, to show performance values ​​that have been
+        collected in the participant over the course of the training rounds.
+
+        If the method is not overridden, it does nothing by default.
+
+        Args:
+            self: The participant.
+        """
 
 
 class InternalParticipant(threading.Thread):
