@@ -214,7 +214,7 @@ use cases:
     give the user the opportunity to respond appropriately.
 
 The main issue we saw is that the participant is responsible for training the model
-and to run the pet protocol. Therefore, we offer a second API in which the training
+and to run the PET protocol. Therefore, we offer a second API in which the training
 of the model is no longer part of the participant. This results in a simpler and more flexible API,
 but it comes with the tradeoff that the user needs to perform the de / serialization of the
 global / local on their side.
