@@ -1,7 +1,7 @@
 from setuptools import setup
 from setuptools_rust import RustExtension
 
-install_requires = ["justbackoff"]
+install_requires = ["justbackoff==0.6.0"]
 
 dev_require = [
     "black",

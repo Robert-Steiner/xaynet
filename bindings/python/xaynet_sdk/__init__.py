@@ -15,7 +15,7 @@ def spawn_participant(
 ):
     """
     Spawns a `InternalParticipant` in a separate thread and returns a participant handle.
-    If a `state` is passed, this state is restored, otherwise a new `InternalParticipant` 
+    If a `state` is passed, this state is restored, otherwise a new `InternalParticipant`
     is created.
 
     Args:

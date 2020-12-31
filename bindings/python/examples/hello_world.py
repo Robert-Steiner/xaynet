@@ -12,8 +12,8 @@ class Participant(xaynet_sdk.ParticipantABC):
         self.model = model
         super().__init__()
 
-    def deserialize_training_input(self, data: list) -> list:
-        return data
+    def deserialize_training_input(self, global_model: list) -> list:
+        return global_model
 
     def train_round(self, training_input: list) -> list:
         LOG.info("training")
@@ -27,9 +27,9 @@ class Participant(xaynet_sdk.ParticipantABC):
     def participate_in_update_task(self) -> bool:
         return True
 
-    def on_new_global_model(self, data: list) -> None:
+    def on_new_global_model(self, global_model: list) -> None:
         with open("global_model.bin", "w") as filehandle:
-            filehandle.write(json.dumps(data))
+            filehandle.write(json.dumps(global_model))
 
 
 def main() -> None:

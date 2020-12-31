@@ -69,8 +69,7 @@ class Participant(  # pylint: disable=too-few-public-methods,too-many-instance-a
 
         A model is given in terms of its weights and the model is
         trained on the participant's dataset for a number of
-        epochs. The weights of the updated model are returned in
-        combination with the number of samples of the train dataset.
+        epochs. The weights of the updated model are returned.
 
         Args:
 
@@ -78,8 +77,7 @@ class Participant(  # pylint: disable=too-few-public-methods,too-many-instance-a
 
         Returns:
 
-            The updated model weights and the number of training samples.
-
+            The updated model weights .
         """
         if training_input is None:
             # This is the first round: the coordinator doesn't have a
@@ -103,8 +101,8 @@ class Participant(  # pylint: disable=too-few-public-methods,too-many-instance-a
 
         return self.regressor.get_weights()
 
-    def deserialize_training_input(self, data: list) -> Optional[np.ndarray]:
-        return np.array(data)
+    def deserialize_training_input(self, global_model: list) -> Optional[np.ndarray]:
+        return np.array(global_model)
 
     def serialize_training_result(self, training_result: np.ndarray) -> bytes:
         return training_result.tolist()

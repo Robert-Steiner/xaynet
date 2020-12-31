@@ -143,6 +143,7 @@ class InternalParticipant(threading.Thread):
 
         # global model cache
         self._global_model = None
+        self._error_on_fetch_global_model = False;
 
         self._tick_lock = threading.Lock()
 
@@ -159,10 +160,20 @@ class InternalParticipant(threading.Thread):
 
     def _fetch_global_model(self):
         LOG.debug("fetch global model")
-        global_model = self._xaynet_participant.global_model()
-        if global_model is not None:
-            data = self._participant.deserialize_training_input(global_model)
-            self._global_model = data
+        try:
+            global_model = self._xaynet_participant.global_model()
+        except (
+            xaynet_sdk.GlobalModelUnavailable,
+            xaynet_sdk.GlobalModelDataTypeMisMatch,
+        ) as err:
+            LOG.warning("failed to get global model: %s", err)
+            self._error_on_fetch_global_model = True
+        else:
+            if global_model is not None:
+                self._global_model = self._participant.deserialize_training_input(global_model)
+            else:
+                self._global_model = None
+            self._error_on_fetch_global_model = False
 
     def _train(self):
         LOG.debug("train model")
@@ -184,21 +195,17 @@ class InternalParticipant(threading.Thread):
         with self._tick_lock:
             self._xaynet_participant.tick()
 
-            if self._xaynet_participant.new_global_model():
-                try:
-                    self._fetch_global_model()
-                except (
-                    xaynet_sdk.GlobalModelUnavailable,
-                    xaynet_sdk.GlobalModelDataTypeMisMatch,
-                ) as err:
-                    LOG.warning("failed to get global model: %s", err)
-                else:
+            if self._xaynet_participant.new_global_model() or self._error_on_fetch_global_model:
+                self._fetch_global_model()
+
+                if not self._error_on_fetch_global_model:
                     self._participant.on_new_global_model(self._global_model)
-                    if (
-                        self._xaynet_participant.should_set_model()
-                        and self._participant.participate_in_update_task()
-                    ):
-                        self._train()
+
+            if (
+                self._xaynet_participant.should_set_model()
+                and self._participant.participate_in_update_task()
+            ):
+                self._train()
 
             made_progress = self._xaynet_participant.made_progress()
 

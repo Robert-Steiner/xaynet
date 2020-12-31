@@ -10,13 +10,10 @@ setup(
     python_requires=">=3.6",
     packages=find_packages(),
     install_requires=[
-        "joblib==0.14.1",
-        "pandas==1.0.1",
-        "py7zr==0.4.4",
-        "scikit-learn==0.22.1",
-        "scipy==1.4.1",
-        "tensorflow==1.15.2",
-        "numpy~=1.15",
+        "pandas==1.2.0",
+        "scikit-learn==0.24.0",
+        "tensorflow==2.4.0",
+        "numpy~=1.19.2",
         "tabulate~=0.8",
     ],
     entry_points={
