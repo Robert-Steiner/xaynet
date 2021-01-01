@@ -143,7 +143,7 @@ class InternalParticipant(threading.Thread):
 
         # global model cache
         self._global_model = None
-        self._error_on_fetch_global_model = False;
+        self._error_on_fetch_global_model = False
 
         self._tick_lock = threading.Lock()
 
@@ -170,7 +170,9 @@ class InternalParticipant(threading.Thread):
             self._error_on_fetch_global_model = True
         else:
             if global_model is not None:
-                self._global_model = self._participant.deserialize_training_input(global_model)
+                self._global_model = self._participant.deserialize_training_input(
+                    global_model
+                )
             else:
                 self._global_model = None
             self._error_on_fetch_global_model = False
@@ -195,7 +197,10 @@ class InternalParticipant(threading.Thread):
         with self._tick_lock:
             self._xaynet_participant.tick()
 
-            if self._xaynet_participant.new_global_model() or self._error_on_fetch_global_model:
+            if (
+                self._xaynet_participant.new_global_model()
+                or self._error_on_fetch_global_model
+            ):
                 self._fetch_global_model()
 
                 if not self._error_on_fetch_global_model:
