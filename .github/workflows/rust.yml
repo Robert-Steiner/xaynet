@@ -107,6 +107,7 @@ jobs:
         with:
           path: ${{ matrix.cargo_manifest }}/target
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-check-${{ matrix.cargo_manifest }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-check-${{ matrix.cargo_manifest }}-
 
       - name: cargo check
         working-directory: ${{ matrix.cargo_manifest }}
@@ -150,6 +151,7 @@ jobs:
         with:
           path: ${{ matrix.cargo_manifest }}/target
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-clippy-${{ matrix.cargo_manifest }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-clippy-${{ matrix.cargo_manifest }}-
 
       - name: cargo clippy
         working-directory: ${{ matrix.cargo_manifest }}
@@ -186,6 +188,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/rust/target
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tests-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tests-
 
       - name: Start docker-compose
         working-directory: ./docker
@@ -232,6 +235,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/rust/target
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-bench-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-bench-
 
       - name: Run Bench
         working-directory: ./rust/benches
@@ -272,6 +276,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/rust/target
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-doc-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-doc-
 
       - name: Check the building of docs
         working-directory: ./rust
@@ -306,6 +311,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/rust/target
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tarpaulin-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tarpaulin-
 
       - name: Start docker-compose
         working-directory: ./docker
@@ -349,7 +355,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-readme-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-readme
 
       - name: Check that readme matches docs
         working-directory: ./
