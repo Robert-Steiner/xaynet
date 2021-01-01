@@ -4,8 +4,35 @@ on:
   push:
 
 jobs:
+  registry-cache:
+    name: cargo-fetch
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install nightly toolchain
+        id: rust-toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: cargo fetch
+        working-directory: ./rust
+        run: cargo fetch
+
   lint:
     name: cargo-fmt
+    needs: registry-cache
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
@@ -29,84 +56,14 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo target
         uses: actions/cache@v2
         with:
-          path: |
-            ${{ matrix.cargo_manifest }}/target
+          path: ${{ matrix.cargo_manifest }}/target
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-fmt-${{ hashFiles('**/Cargo.lock') }}
 
       - name: cargo fmt
         working-directory: ${{ matrix.cargo_manifest }}
         run: cargo +nightly fmt --all -- --check
-
-
-  sdk_lint:
-    timeout-minutes: 20
-    runs-on: ubuntu-latest
-    env:
-        working-directory: ./bindings/python
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-
-      - name: Cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo target
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ env.working-directory }}/target
-          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-fmt-python-bindings-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Setup Python 3.6
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.6
-          architecture: "x64"
-
-      - name: Get pip cache dir
-        id: pip-cache
-        run: |
-          echo "::set-output name=dir::$(pip cache dir)"
-
-      - name: Cache pip packages
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.pip-cache.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ hashFiles('./bindings/python/setup.py') }}
-
-      - name: Install dependencies and package
-        run: |
-          pip install --upgrade pip
-          pip install setuptools_rust
-          python setup.py install
-          pip install -e  .[dev]
-        working-directory: ${{ env.working-directory }}
-
-      - name: black
-        run: |
-          black --check .
-        working-directory: ${{ env.working-directory }}
-
-      - name: isort
-        run: |
-          isort --check-only --diff .
-        working-directory: ${{ env.working-directory }}
