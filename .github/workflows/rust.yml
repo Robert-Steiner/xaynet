@@ -44,3 +44,47 @@ jobs:
       - name: cargo fmt
         working-directory: ${{ matrix.cargo_manifest }}
         run: cargo +nightly fmt --all -- --check
+
+
+  sdk_lint:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    env:
+        working-directory: ./bindings/python
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+          architecture: "x64"
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: Cache pip packages
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('./bindings/python/setup.py') }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install setuptools_rust
+          pip install -e  .[dev]
+        working-directory: ${{env.working-directory}}
+
+      - name: black
+        run: |
+          black --check .
+        working-directory: ${{env.working-directory}}
+
+      - name: isort
+        run: |
+          isort --check-only --diff .
+        working-directory: ${{env.working-directory}}
