@@ -11,6 +11,9 @@ jobs:
     name: cargo-fmt
     timeout-minutes: 20
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        path: [./rust, ./bindings/python]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -36,5 +39,5 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-fmt-${{ hashFiles('**/Cargo.lock') }}
 
       - name: cargo fmt
-        working-directory: ./rust
+        working-directory: ${{ matrix.path }}
         run: cargo +nightly fmt --all -- --check
