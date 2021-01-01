@@ -2,10 +2,9 @@ name: Rust-CI
 
 on:
   push:
-    # paths:
-    #   - ''
-    #   - 'rust/**'
-    #   - 'bindings/**'
+    paths:
+      - 'rust/**'
+      - 'bindings/**'
 
 jobs:
   lint:
@@ -30,28 +29,21 @@ jobs:
           # prints the installed nightly version rather than the installed version of stable
           default: true
 
-      - name: Get Date
-        id: get-date
-        run: |
-          echo "::set-output name=date::$(${{ matrix.cargo_manifest }}/Cargo.lock)"
-        shell: bash
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-registry-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Get Date
-        id: get-date
-        run: |
-          echo ${{ steps.get-date.outputs.date }}
-          echo ${{ hashFiles( ${{ steps.get-date.outputs.date }} ) }}
-        shell: bash
+      - name: Cache cargo target build
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ matrix.cargo_manifest }}/target
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-fmt-${{ hashFiles('**/Cargo.lock') }}
 
-      # - name: Cache cargo
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: |
-      #       ~/.cargo/registry
-      #       ~/.cargo/git
-      #       ${{ matrix.cargo_manifest }}/target
-      #     key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-fmt-${{ hashFiles() }}
-
-      # - name: cargo fmt
-      #   working-directory: ${{ matrix.cargo_manifest }}
-      #   run: cargo +nightly fmt --all -- --check
+      - name: cargo fmt
+        working-directory: ${{ matrix.cargo_manifest }}
+        run: cargo +nightly fmt --all -- --check
