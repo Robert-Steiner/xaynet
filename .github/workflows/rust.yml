@@ -368,7 +368,7 @@ jobs:
           key: ${{ runner.os }}-cargo-readme-bin
 
       - name: Install cargo readme
-        run:  cargo install cargo-readme
+        run: cargo install cargo-readme || true
 
       - name: Check that readme matches docs
         working-directory: ./
