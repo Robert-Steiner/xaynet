@@ -12,6 +12,8 @@ jobs:
     name: cargo-fetch
     timeout-minutes: 5
     runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -34,8 +36,45 @@ jobs:
       - name: Cache key
         id: cache-key
         run: |
-          echo "::set-output name=key::$(echo ${{ runner.os }}-${{ steps.get-date.outputs.date }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }})"
+          echo "::set-output name=key::$(echo ${{ runner.os }}-cargo-registry-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/Cargo.lock') }})"
         shell: bash
+
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ steps.cache-key.outputs.key }}
+          restore-keys: ${{ runner.os }}-cargo-registry-${{ steps.get-date.outputs.date }}-
+
+      - name: cargo fetch
+        working-directory: ./rust
+        run: cargo fetch
+
+  format:
+    name: cargo-fmt
+    needs: registry-cache
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cargo_manifest: [rust, bindings/python]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install nightly toolchain
+        id: rust-toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: rustfmt
+          # we need to set the nightly toolchain as default so that `rust-toolchain.outputs.rustc`
+          # prints the installed nightly version rather than the installed version of stable
+          default: true
 
       - name: Use cached cargo registry
         uses: actions/cache@v2
@@ -43,50 +82,13 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ steps.cache-key.outputs.key }}
-          restore-keys: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-cargo-registry-
+          key: ${{ needs.registry-cache.outputs.cache-key }}
 
-      - name: cargo fetch
-        working-directory: ./rust
-        run: cargo fetch
+      # cargo fmt does not create any artifacts, therefore we don't need to cache the target folder
 
-  # format:
-  #   name: cargo-fmt
-  #   needs: registry-cache
-  #   timeout-minutes: 10
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       cargo_manifest: [rust, bindings/python]
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v2
-
-  #     - name: Install nightly toolchain
-  #       id: rust-toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         profile: minimal
-  #         toolchain: nightly
-  #         components: rustfmt
-  #         # we need to set the nightly toolchain as default so that `rust-toolchain.outputs.rustc`
-  #         # prints the installed nightly version rather than the installed version of stable
-  #         default: true
-
-  #     - name: Use cached cargo registry
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: |
-  #           ~/.cargo/registry
-  #           ~/.cargo/git
-  #         key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-  #     # cargo fmt does not create any artifacts, therefore we don't need to cache the target folder
-
-  #     - name: cargo fmt
-  #       working-directory: ${{ matrix.cargo_manifest }}
-  #       run: cargo +nightly fmt --all -- --check
+      - name: cargo fmt
+        working-directory: ${{ matrix.cargo_manifest }}
+        run: cargo +nightly fmt --all -- --check
 
   # check:
   #   name: cargo-check
