@@ -34,7 +34,7 @@ jobs:
       - name: Cache key
         id: cache-key
         run: |
-          echo "::set-output name=key::$(echo ${{ runner.os }}-${{ steps.get-date.outputs.date }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}"
+          echo "::set-output name=key::$(echo ${{ runner.os }}-${{ steps.get-date.outputs.date }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }})"
         shell: bash
 
       - name: Use cached cargo registry
