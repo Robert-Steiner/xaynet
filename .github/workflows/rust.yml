@@ -342,6 +342,71 @@ jobs:
         working-directory: ./docker
         run: docker-compose down
 
+  python_sdk:
+    name: Python SDK
+    needs: registry-cache
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    env:
+        working-directory: ./bindings/python
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        id: rust-toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ needs.registry-cache.outputs.cache-key }}
+
+      - name: Cache cargo target
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.working-directory }}/target
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-python-bindings-${{ needs.registry-cache.outputs.cache-date }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-python-bindings-${{ needs.registry-cache.outputs.cache-date }}-
+
+      - name: Setup Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+          architecture: "x64"
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: Cache pip packages
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('./bindings/python/setup.py') }}
+
+      - name: Install dependencies and package
+        run: |
+          pip install --upgrade pip
+          pip install --upgrade setuptools
+          pip install setuptools_rust
+          python setup.py install
+          pip install -e  .[dev]
+        working-directory: ${{ env.working-directory }}
+
+      - name: black
+        working-directory: ${{ env.working-directory }}
+        run: black --check .
+
+      - name: isort
+        working-directory: ${{ env.working-directory }}
+        run: isort --check-only --diff .
 
   readme:
     name: cargo-readme
