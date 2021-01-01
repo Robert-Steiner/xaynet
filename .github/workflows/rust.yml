@@ -34,7 +34,7 @@ jobs:
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-registry-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Cache cargo target build
+      - name: Cache cargo target
         uses: actions/cache@v2
         with:
           path: |
@@ -55,6 +55,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo target
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.working-directory }}/target
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-fmt-python-bindings-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Setup Python 3.6
         uses: actions/setup-python@v2
         with:
@@ -72,19 +93,20 @@ jobs:
           path: ${{ steps.pip-cache.outputs.dir }}
           key: ${{ runner.os }}-pip-${{ hashFiles('./bindings/python/setup.py') }}
 
-      - name: Install dependencies
+      - name: Install dependencies and package
         run: |
           pip install --upgrade pip
           pip install setuptools_rust
+          python setup.py install
           pip install -e  .[dev]
-        working-directory: ${{env.working-directory}}
+        working-directory: ${{ env.working-directory }}
 
       - name: black
         run: |
           black --check .
-        working-directory: ${{env.working-directory}}
+        working-directory: ${{ env.working-directory }}
 
       - name: isort
         run: |
           isort --check-only --diff .
-        working-directory: ${{env.working-directory}}
+        working-directory: ${{ env.working-directory }}
