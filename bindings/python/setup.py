@@ -1,5 +1,5 @@
 from setuptools import setup
-from setuptools_rust import RustExtension
+from setuptools_rust import Binding, RustExtension
 
 install_requires = ["justbackoff==0.6.0"]
 
@@ -20,7 +20,7 @@ setup(
     license="Apache License Version 2.0",
     python_requires=">=3.6",
     packages=["xaynet_sdk"],
-    rust_extensions=[RustExtension("xaynet_sdk.xaynet_sdk", "Cargo.toml", debug=False)],
+    rust_extensions=[RustExtension("xaynet_sdk.xaynet_sdk", binding=Binding.PyO3)],
     include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
