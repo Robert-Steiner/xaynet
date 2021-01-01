@@ -326,3 +326,4 @@ But if something is missing, not very clear or not working properly, please let 
 by opening an issue.
 
 We are happy to help and open to ideas or feedback :)
+
