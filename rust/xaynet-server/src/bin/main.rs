@@ -31,7 +31,7 @@ async fn main() {
     let opt = Opt::from_args();
 
     let settings = Settings::new(opt.config_path).unwrap_or_else(|err| {
-        eprintln!("ups {}", err);
+        eprintln!("us {}", err);
         process::exit(1);
     });
     let Settings {
