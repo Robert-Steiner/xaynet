@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        path: [${{ github.workspace }}/rust, ${{ github.workspace }}/bindings/python]
+        cargo_manifest: [./rust, ./bindings/python]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -35,9 +35,9 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            ${{ github.workspace }}/rust/target
-          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-fmt-${{ hashFiles('**/Cargo.lock') }}
+            ${{ matrix.cargo_manifest }}/target
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-fmt-${{ hashFiles(${{ matrix.cargo_manifest }}/Cargo.lock) }}
 
       - name: cargo fmt
-        working-directory: ${{ matrix.path }}
+        working-directory: ${{ matrix.cargo_manifest }}
         run: cargo +nightly fmt --all -- --check
