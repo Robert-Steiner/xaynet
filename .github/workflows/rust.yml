@@ -42,6 +42,7 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         cargo_manifest: [rust, bindings/python]
     steps:
@@ -79,6 +80,7 @@ jobs:
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         cargo_manifest: [rust, bindings/python]
     steps:
@@ -116,10 +118,11 @@ jobs:
 
   clippy:
     name: cargo-clippy
-    needs: registry-cache
+    needs: [registry-cache, format, check]
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         cargo_manifest: [rust, bindings/python]
     steps:
@@ -156,7 +159,7 @@ jobs:
 
   test:
     name: cargo-test
-    needs: registry-cache
+    needs: [registry-cache, format, check]
     timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
@@ -202,7 +205,7 @@ jobs:
 
   bench:
     name: cargo-bench
-    needs: registry-cache
+    needs: [registry-cache, format, check]
     timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
@@ -242,7 +245,7 @@ jobs:
 
   docs:
     name: cargo-doc
-    needs: registry-cache
+    needs: [registry-cache, format, check]
     timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
@@ -276,7 +279,7 @@ jobs:
 
   coverage:
     name: cargo-tarpaulin
-    needs: registry-cache
+    needs: [registry-cache, format, check]
     timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
