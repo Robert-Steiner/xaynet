@@ -327,4 +327,3 @@ by opening an issue.
 
 We are happy to help and open to ideas or feedback :)
 
- 
