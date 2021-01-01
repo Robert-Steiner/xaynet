@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       cache-key: ${{ steps.cache-key.outputs.key }}
+      cache-date: ${{ steps.get-date.outputs.date }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -29,14 +30,12 @@ jobs:
       # take up too much space by caching old dependencies
       - name: Year + ISO week number
         id: get-date
-        run: |
-          echo "::set-output name=date::$(/bin/date -u "+%Y-%V")"
+        run: echo "::set-output name=date::$(/bin/date -u "+%Y-%V")"
         shell: bash
 
       - name: Cache key
         id: cache-key
-        run: |
-          echo "::set-output name=key::$(echo ${{ runner.os }}-cargo-registry-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/Cargo.lock') }})"
+        run: echo "::set-output name=key::$(echo ${{ runner.os }}-cargo-registry-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/Cargo.lock') }})"
         shell: bash
 
       - name: Cache cargo registry
@@ -122,7 +121,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ matrix.cargo_manifest }}/target
-          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-check-${{ matrix.cargo_manifest }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-check-${{ matrix.cargo_manifest }}-${{ needs.registry-cache.outputs.cache-date }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-check-${{ matrix.cargo_manifest }}-${{ needs.registry-cache.outputs.cache-date }}-
 
       - name: cargo check
         working-directory: ${{ matrix.cargo_manifest }}
@@ -165,9 +165,8 @@ jobs:
   #       uses: actions/cache@v2
   #       with:
   #         path: ${{ matrix.cargo_manifest }}/target
-  #         key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-clippy-${{ matrix.cargo_manifest }}-${{ hashFiles('**/Cargo.lock') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-clippy-${{ matrix.cargo_manifest }}-
+  #         key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-clippy-${{ matrix.cargo_manifest }}-${{ needs.registry-cache.outputs.cache-date }}-${{ hashFiles('**/Cargo.lock') }}
+  #         restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-clippy-${{ matrix.cargo_manifest }}-${{ needs.registry-cache.outputs.cache-date }}-
 
   #     - name: cargo clippy
   #       working-directory: ${{ matrix.cargo_manifest }}
@@ -203,8 +202,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/rust/target
-          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tests-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tests-
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tests-${{ needs.registry-cache.outputs.cache-date }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tests-${{ needs.registry-cache.outputs.cache-date }}-
 
       - name: Start docker-compose
         working-directory: ./docker
@@ -250,8 +249,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/rust/target
-          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-bench-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-bench-
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-bench-${{ needs.registry-cache.outputs.cache-date }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-bench-${{ needs.registry-cache.outputs.cache-date }}-
 
       - name: Run Bench
         working-directory: ./rust/benches
@@ -291,8 +290,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/rust/target
-          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-doc-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-doc-
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-doc-${{ needs.registry-cache.outputs.cache-date }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-doc-${{ needs.registry-cache.outputs.cache-date }}-
 
       - name: Check the building of docs
         working-directory: ./rust
@@ -326,8 +325,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/rust/target
-          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tarpaulin-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tarpaulin-
+          key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tarpaulin-${{ needs.registry-cache.outputs.cache-date }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-tarpaulin-${{ needs.registry-cache.outputs.cache-date }}-
 
       - name: Start docker-compose
         working-directory: ./docker
@@ -369,10 +368,7 @@ jobs:
           key: ${{ runner.os }}-cargo-readme-bin
 
       - name: Install cargo readme
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-readme
+        run:  cargo install cargo-readme
 
       - name: Check that readme matches docs
         working-directory: ./
