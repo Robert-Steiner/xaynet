@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        path: [./rust, ./bindings/python]
+        path: [${{ github.workspace }}/rust, ${{ github.workspace }}/bindings/python]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
