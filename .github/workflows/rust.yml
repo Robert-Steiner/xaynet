@@ -151,7 +151,9 @@ jobs:
         with:
           path: ${{ matrix.cargo_manifest }}/target
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-clippy-${{ matrix.cargo_manifest }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-clippy-${{ matrix.cargo_manifest }}-
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-clippy-${{ matrix.cargo_manifest }}-
+            ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.rustc }}-check-${{ matrix.cargo_manifest }}-
 
       - name: cargo clippy
         working-directory: ${{ matrix.cargo_manifest }}
@@ -343,19 +345,20 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - name: Install cargo readme
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-readme
-
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-readme
+            ~/.cargo/bin/cargo-readme
+          key: ${{ runner.os }}-cargo-readme-bin
+
+      - name: Install cargo readme
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-readme
 
       - name: Check that readme matches docs
         working-directory: ./
