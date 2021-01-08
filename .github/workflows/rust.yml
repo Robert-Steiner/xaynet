@@ -5,6 +5,7 @@ on:
     paths:
       - 'rust/**'
       - 'bindings/python/**'
+      - '.github/workflows/rust.yml'
 
 jobs:
 
