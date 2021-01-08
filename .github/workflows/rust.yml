@@ -343,7 +343,7 @@ jobs:
         run: docker-compose down
 
   python_sdk:
-    name: Python SDK
+    name: Python SD
     needs: [registry-cache, format, check]
     timeout-minutes: 20
     runs-on: ubuntu-latest
