@@ -343,7 +343,7 @@ jobs:
         run: docker-compose down
 
   python_sdk:
-    name: python sdk
+    name: Python SDK
     needs: [registry-cache, format, check]
     timeout-minutes: 20
     runs-on: ubuntu-latest
@@ -391,13 +391,13 @@ jobs:
           path: ${{ steps.pip-cache.outputs.dir }}
           key: ${{ runner.os }}-pip-${{ hashFiles('./bindings/python/setup.py') }}
 
-      - name: Install dependencies and build sdk
+      - name: Install dependencies and package
         run: |
           pip install --upgrade pip
           pip install --upgrade setuptools
-          pip install setuptools_rust
-          python setup.py develop
-          pip install -e  .[dev]
+          pip install maturin
+          pip install black==20.8b1 isort==5.7.0
+          maturin build
         working-directory: ${{ env.working-directory }}
 
       - name: black
