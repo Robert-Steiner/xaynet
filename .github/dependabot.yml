@@ -9,13 +9,22 @@ updates:
     directory: "/bindings/python"
     schedule:
       interval: weekly
+    labels:
+      - "rust"
+      - "bindings"
 
   - package-ecosystem: pip
     directory: "/bindings/python/examples/keras_house_prices"
     schedule:
       interval: weekly
+    labels:
+      - "python"
+      - "bindings"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    labels:
+      - "github-actions"
+      - "CI"
