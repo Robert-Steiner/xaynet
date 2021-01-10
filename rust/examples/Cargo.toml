@@ -1,5 +1,5 @@
 [package]
-name = "examples"
+name = "examplees"
 version = "0.0.0"
 authors = ["Xayn Engineering <engineering@xaynet.dev>"]
 publish = false
