@@ -1,8 +1,21 @@
 version: 2
 updates:
-- package-ecosystem: cargo
-  directory: "/rust"
-  schedule:
-    interval: daily
-    time: "04:00"
-  open-pull-requests-limit: 10
+  - package-ecosystem: cargo
+    directory: "/rust"
+    schedule:
+      interval: daily
+
+  - package-ecosystem: cargo
+    directory: "/bindings/python"
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: pip
+    directory: "/bindings/python/examples/keras_house_prices"
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
