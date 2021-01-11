@@ -11,6 +11,7 @@ repository = "https://github.com/xaynetwork/xaynet/"
 license-file = "../../LICENSE"
 keywords = ["federated-learning", "fl", "ai", "machine-learning"]
 categories = ["science", "cryptography"]
+autobins = false
 
 [dev-dependencies]
 async-trait = "0.1.42"
