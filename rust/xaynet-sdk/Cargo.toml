@@ -17,7 +17,7 @@ all-features = true
 [dependencies]
 async-trait = "0.1.42"
 derive_more = { version = "0.99.11", default-features = false, features = ["from"] }
-serde = { version = "1.0.118", features = ["derive"] }
+serde = { version = "1.0.119", features = ["derive"] }
 sodiumoxide = "0.2.6"
 thiserror = "1.0.23"
 tracing = "0.1.22"
