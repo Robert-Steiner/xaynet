@@ -13,7 +13,7 @@ setup(
         "pandas==1.2.0",
         "scikit-learn==0.24.0",
         "tensorflow==2.4.0",
-        "numpy~=1.19.2",
+        "numpy>=1.19.2,<1.21.0",
         "tabulate~=0.8",
     ],
     entry_points={
